@@ -1,7 +1,5 @@
 const { addonBuilder } = require("stremio-addon-sdk");
 const axios = require('axios');
-const express = require('express');
-const cors = require('cors');
 
 let WMTWStreamType = ''; // Declare the global variable
 let WMTWProgramTitle = ''; // Declare the global variable
@@ -15,57 +13,14 @@ function UpdateGlobalESTTime() {
   globalESTTime = currentDate.toLocaleString('en-US', estOptions);
 }
 
-const proxy = express();
-
-//  Local On-Demand Cors Proxy to Fetch JSON Data from 'https://www.wmtw.com/nowcast/status'
-const startProxy = function (port = 8010, proxyPartial = '/proxy', credentials = false, origin = '*', customDNSResolver = '8.8.8.8') {
-    const proxyUrl = 'https://www.wmtw.com'; // Replace with your default proxy URL
-    proxy.use(cors({ credentials: credentials, origin: origin }));
-    proxy.options('*', cors({ credentials: credentials, origin: origin }));
-    const cleanProxyUrl = proxyUrl.replace(/\/$/, '');
-    const cleanProxyPartial = proxyPartial.replace(/\//g, '');
-    
-    proxy.use('/' + cleanProxyPartial, async function (req, res) {
-        try {
-            // Use custom DNS resolver for this specific request
-            const axiosConfig = {
-                method: 'get',
-                url: cleanProxyUrl + req.url,
-                responseType: 'json',
-                dns: {
-                    resolver: customDNSResolver
-                }
-            };
-
-            const response = await axios(axiosConfig);
-
-            const accessControlAllowOriginHeader = response.headers['access-control-allow-origin'];
-            if (accessControlAllowOriginHeader && accessControlAllowOriginHeader !== origin) {
-                response.headers['access-control-allow-origin'] = origin;
-            }
-
-            res.send(response.data);
-        } catch (error) {
-            UpdateGlobalESTTime();
-            console.error(`${globalESTTime} | Error proxying request:`, error);
-            res.status(500).send('Internal Server Error');
-        }
-    });
-
-    return proxy.listen(port);
-};
-
 async function GetWMTWStreamURL() {
     try {
-        const apiUrl = 'http://localhost:8010/proxy/nowcast/status';
-
-        const server = startProxy();
-
+        const apiUrl = "https://cors-anywhere-proxy-streamio.mccutcheon.workers.dev/?https://www.wmtw.com/nowcast/status"
         const response = await axios.get(apiUrl);
         const jsonData = response.data;
         UpdateGlobalESTTime();
         console.log(`${globalESTTime} | WMTW Data:`, jsonData.data);
-        server.close();
+       // server.close();
 
         let streamUrl = jsonData.data.stream;
         const indexOfM3U8 = streamUrl.indexOf('.m3u8');
@@ -267,49 +222,43 @@ builder.defineStreamHandler((args) => {
     });
 });
 
-const runUpdateWMTWStreamUrl = async () => {
-    try {
-      await UpdateWMTWStreamUrl();
-    } catch (error) {}
-  };
-  
-  const logTimeUntilNext30Minutes = () => {
-    const now = new Date();
-    const minutes = now.getMinutes();
-    const seconds = now.getSeconds();
-    const milliseconds = now.getMilliseconds();
-  
-    // Calculate the time until the next 30-minute mark
-    const timeUntilNext30Minutes = (30 - (minutes % 30)) * 60 * 1000 - seconds * 1000 - milliseconds;
-  
-    // Convert milliseconds to a human-readable format
-    const timeString = new Date(timeUntilNext30Minutes).toISOString().substr(11, 8);
-  
-    UpdateGlobalESTTime();
-    console.log(`${globalESTTime} | Time until next 30 minute Sync Mark: ${timeString}`);
-  };
-  
-  const runEvery30Minutes = async () => {
+const runEvery30Minutes = async () => {
+    const runUpdateWMTWStreamUrl = async () => {
+        try {
+        await UpdateWMTWStreamUrl();
+        } catch (error) {}
+    };
+    const logTimeUntilNext30Minutes = () => {
+        const now = new Date();
+        const minutes = now.getMinutes();
+        const seconds = now.getSeconds();
+        const milliseconds = now.getMilliseconds();
+    
+        // Calculate the time until the next 30-minute mark
+        const timeUntilNext30Minutes = (30 - (minutes % 30)) * 60 * 1000 - seconds * 1000 - milliseconds;
+    
+        // Convert milliseconds to a human-readable format
+        const timeString = new Date(timeUntilNext30Minutes).toISOString().substr(11, 8);
+    
+        UpdateGlobalESTTime();
+        console.log(`${globalESTTime} | Time until next 30 minute Sync Mark: ${timeString}`);
+    };
     await runUpdateWMTWStreamUrl(); // Run the update function at the start
-  
     logTimeUntilNext30Minutes();
-  
     // Set up the interval to log the time until the next 30 minutes (for demonstration purposes)
     setInterval(logTimeUntilNext30Minutes, 5 * 60 * 1000); // Log every 5 minutes for demonstration
-  
     // Initial delay to align the execution with the next 30-minute mark
     const timeUntilNext30Minutes = (30 - (new Date().getMinutes() % 30)) * 60 * 1000;
     setTimeout(() => {
       // Run the update function again
       runUpdateWMTWStreamUrl();
-      
       // Then set the interval to run every 30 minutes
       setInterval(async () => {
         await runUpdateWMTWStreamUrl();
         logTimeUntilNext30Minutes();
       }, 30 * 60 * 1000);
     }, timeUntilNext30Minutes);
-  };
+};
   
   runEvery30Minutes();  
 
