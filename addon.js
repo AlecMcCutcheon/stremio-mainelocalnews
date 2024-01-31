@@ -222,44 +222,37 @@ builder.defineStreamHandler((args) => {
     });
 });
 
-const runEvery30Minutes = async () => {
-    const runUpdateWMTWStreamUrl = async () => {
-        try {
-        await UpdateWMTWStreamUrl();
-        } catch (error) {}
+// Function to Update WMTW with a dynamic interval
+const startDynamicInterval = () => {
+    const dynamicLoop = async () => {
+        const getTimestamp = () => {
+            const currentDate = new Date();
+            const estTimestamp = currentDate.toLocaleString('en-US', { timeZone: 'America/New_York' });
+            return estTimestamp;
+        };
+        const timestamp = getTimestamp();
+        const checkAndUpdate = async () => {
+            const currentDate = new Date();
+            const minutes = currentDate.getMinutes();
+            if (minutes % 15 === 0) {
+                await UpdateWMTWStreamUrl();
+            }
+        };
+        await checkAndUpdate();
+        const currentDate = new Date();
+        const minutes = currentDate.getMinutes();
+        const seconds = currentDate.getSeconds();
+        const minutesUntilNextUpdate = (30 - (minutes % 30)) % 30 - 1;
+        const secondsUntilNextUpdate = 60 - seconds;
+        const remainingTime = minutesUntilNextUpdate * 60 * 1000 + secondsUntilNextUpdate * 1000;
+        const dynamicInterval = Math.max(remainingTime / 1.5, 30000);
+        const estNextDynamicInterval = new Date(Date.now() + dynamicInterval).toLocaleString('en-US', { timeZone: 'America/New_York', hour12: true });
+        console.log(`${timestamp} - Next dynamic interval is scheduled for ${estNextDynamicInterval}.`);
+        setTimeout(dynamicLoop, dynamicInterval);
     };
-    const logTimeUntilNext30Minutes = () => {
-        const now = new Date();
-        const minutes = now.getMinutes();
-        const seconds = now.getSeconds();
-        const milliseconds = now.getMilliseconds();
-    
-        // Calculate the time until the next 30-minute mark
-        const timeUntilNext30Minutes = (30 - (minutes % 30)) * 60 * 1000 - seconds * 1000 - milliseconds;
-    
-        // Convert milliseconds to a human-readable format
-        const timeString = new Date(timeUntilNext30Minutes).toISOString().substr(11, 8);
-    
-        UpdateGlobalESTTime();
-        console.log(`${globalESTTime} | Time until next 30 minute Sync Mark: ${timeString}`);
+        dynamicLoop();
     };
-    await runUpdateWMTWStreamUrl(); // Run the update function at the start
-    logTimeUntilNext30Minutes();
-    // Set up the interval to log the time until the next 30 minutes (for demonstration purposes)
-    setInterval(logTimeUntilNext30Minutes, 5 * 60 * 1000); // Log every 5 minutes for demonstration
-    // Initial delay to align the execution with the next 30-minute mark
-    const timeUntilNext30Minutes = (30 - (new Date().getMinutes() % 30)) * 60 * 1000;
-    setTimeout(() => {
-      // Run the update function again
-      runUpdateWMTWStreamUrl();
-      // Then set the interval to run every 30 minutes
-      setInterval(async () => {
-        await runUpdateWMTWStreamUrl();
-        logTimeUntilNext30Minutes();
-      }, 30 * 60 * 1000);
-    }, timeUntilNext30Minutes);
-};
   
-  runEvery30Minutes();  
+  startDynamicInterval();
 
 module.exports = builder.getInterface();
