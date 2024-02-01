@@ -1,5 +1,5 @@
 const { addonBuilder } = require("stremio-addon-sdk");
-const fetch = require("node-fetch");
+const fetch = import("node-fetch");
 
 let WMTWStreamType = ''; // Declare the global variable
 let WMTWProgramTitle = ''; // Declare the global variable
