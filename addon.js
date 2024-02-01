@@ -232,7 +232,6 @@ builder.defineStreamHandler((args) => {
             (async () => {
                 const streams = { 'streams': [] };
                 if (args.id in getStreams()) {
-                    console.log(`${globalESTTime} | New stream requested`);
                     streams['streams'].push(getStreams()[args.id]);
                 }
                 resolve(streams);
@@ -270,7 +269,7 @@ const startDynamicInterval = async () => {
         const minutesUntilNextUpdate = (30 - (minutes % 30)) % 30 - 1;
         const secondsUntilNextUpdate = 60 - seconds;
         const remainingTime = minutesUntilNextUpdate * 60 * 1000 + secondsUntilNextUpdate * 1000;
-        const dynamicInterval = remainingTime + 60000;
+        const dynamicInterval = Math.max(remainingTime , 15000);
         const estNextDynamicInterval = new Date(Date.now() + dynamicInterval).toLocaleString('en-US', { timeZone: 'America/New_York', hour12: true });
         console.log(`${timestamp} - Next dynamic interval is scheduled for ${estNextDynamicInterval}.`);
         setTimeout(dynamicLoop, dynamicInterval);
