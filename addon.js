@@ -16,7 +16,7 @@ const https = require('https');
 
 async function GetWMTWStreamURL() {
   try {
-    const apiUrl = "https://cors-anywhere-proxy-streamio.mccutcheon.workers.dev/?https://www.wmtw.com/nowcast/status";
+    const apiUrl = "https://varstore.mccutcheon.workers.dev/?VarName=WMTW_JSON";
 	
     const jsonData = await new Promise((resolve, reject) => {
       const req = https.get(apiUrl, (res) => {
@@ -28,7 +28,6 @@ async function GetWMTWStreamURL() {
 
         res.on('end', () => {
           try {
-			console.log(data);
             const parsedData = JSON.parse(data);
             resolve(parsedData);
           } catch (error) {
@@ -45,7 +44,6 @@ async function GetWMTWStreamURL() {
 	});
 
     UpdateGlobalESTTime();
-    console.log(`${globalESTTime} | WMTW Data:`, jsonData.data);
 
     let streamUrl = jsonData.data.stream;
     const indexOfM3U8 = streamUrl.indexOf('.m3u8');
@@ -82,7 +80,7 @@ async function UpdateWMTWStreamUrl() {
     }
 
     UpdateGlobalESTTime();
-    console.log(`${globalESTTime} | WMTW Data Updated! Stream Type: ${WMTWStreamType}`);
+    console.log(`${globalESTTime} | WMTW Data Updated! | Stream: ${stream} | Stream Type: ${WMTWStreamType}`);
   } else {
     console.log(`${globalESTTime} | Channel not found with ID:`, ID);
   }
@@ -234,6 +232,7 @@ builder.defineStreamHandler((args) => {
             (async () => {
                 const streams = { 'streams': [] };
                 if (args.id in getStreams()) {
+                    console.log(`${globalESTTime} | New stream requested`);
                     streams['streams'].push(getStreams()[args.id]);
                 }
                 resolve(streams);
@@ -271,7 +270,7 @@ const startDynamicInterval = async () => {
         const minutesUntilNextUpdate = (30 - (minutes % 30)) % 30 - 1;
         const secondsUntilNextUpdate = 60 - seconds;
         const remainingTime = minutesUntilNextUpdate * 60 * 1000 + secondsUntilNextUpdate * 1000;
-        const dynamicInterval = Math.max(remainingTime / 1.5, 30000);
+        const dynamicInterval = remainingTime + 60000;
         const estNextDynamicInterval = new Date(Date.now() + dynamicInterval).toLocaleString('en-US', { timeZone: 'America/New_York', hour12: true });
         console.log(`${timestamp} - Next dynamic interval is scheduled for ${estNextDynamicInterval}.`);
         setTimeout(dynamicLoop, dynamicInterval);
