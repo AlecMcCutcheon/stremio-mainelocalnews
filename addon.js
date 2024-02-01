@@ -17,7 +17,7 @@ const https = require('https');
 async function GetWMTWStreamURL() {
   try {
     const apiUrl = "https://cors-anywhere-proxy-streamio.mccutcheon.workers.dev/?https://www.wmtw.com/nowcast/status";
-
+	
     const jsonData = await new Promise((resolve, reject) => {
       const req = https.get(apiUrl, (res) => {
         let data = '';
@@ -28,6 +28,7 @@ async function GetWMTWStreamURL() {
 
         res.on('end', () => {
           try {
+			console.log(data);
             const parsedData = JSON.parse(data);
             resolve(parsedData);
           } catch (error) {
@@ -41,7 +42,7 @@ async function GetWMTWStreamURL() {
       });
 
       req.end();
-    });
+	});
 
     UpdateGlobalESTTime();
     console.log(`${globalESTTime} | WMTW Data:`, jsonData.data);
