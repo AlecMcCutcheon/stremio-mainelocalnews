@@ -1,5 +1,5 @@
 const { addonBuilder } = require("stremio-addon-sdk");
-const axios = require('axios');
+const fetch = require("node-fetch");
 
 let WMTWStreamType = ''; // Declare the global variable
 let WMTWProgramTitle = ''; // Declare the global variable
@@ -14,53 +14,51 @@ function UpdateGlobalESTTime() {
 }
 
 async function GetWMTWStreamURL() {
-    try {
-        const apiUrl = "https://cors-anywhere-proxy-streamio.mccutcheon.workers.dev/?https://www.wmtw.com/nowcast/status"
-        const response = await axios.get(apiUrl);
-        const jsonData = response.data;
-        UpdateGlobalESTTime();
-        console.log(`${globalESTTime} | WMTW Data:`, jsonData.data);
-       // server.close();
+  try {
+    const apiUrl = "https://cors-anywhere-proxy-streamio.mccutcheon.workers.dev/?https://www.wmtw.com/nowcast/status";
+    const response = await fetch(apiUrl);
+    const jsonData = await response.json();
+    UpdateGlobalESTTime();
+    console.log(`${globalESTTime} | WMTW Data:`, jsonData.data);
 
-        let streamUrl = jsonData.data.stream;
-        const indexOfM3U8 = streamUrl.indexOf('.m3u8');
-        if (indexOfM3U8 !== -1) {
-            streamUrl = streamUrl.substring(0, indexOfM3U8 + 5);
-        }
-
-        return {
-            stream: streamUrl,
-            seconds_until_live: jsonData.data.seconds_until_live,
-            programTitle: jsonData.data.programTitle
-        };
-    } catch (error) {
-        UpdateGlobalESTTime();
-        console.error(`${globalESTTime} | Error fetching or processing data:`, error);
-        return null;
+    let streamUrl = jsonData.data.stream;
+    const indexOfM3U8 = streamUrl.indexOf('.m3u8');
+    if (indexOfM3U8 !== -1) {
+      streamUrl = streamUrl.substring(0, indexOfM3U8 + 5);
     }
+
+    return {
+      stream: streamUrl,
+      seconds_until_live: jsonData.data.seconds_until_live,
+      programTitle: jsonData.data.programTitle
+    };
+  } catch (error) {
+    UpdateGlobalESTTime();
+    console.error(`${globalESTTime} | Error fetching or processing data:`, error);
+    return null;
+  }
 }
 
 async function UpdateWMTWStreamUrl() {
-    const ID = "MaineLocalNews-89960945772534639607784459421582";
-    const channelToUpdate = RADIO_DATA.find(channel => channel.id === ID);
+  const ID = "MaineLocalNews-89960945772534639607784459421582";
+  const channelToUpdate = RADIO_DATA.find(channel => channel.id === ID);
 
-    if (channelToUpdate) {
-        const { stream, seconds_until_live, programTitle } = await GetWMTWStreamURL();
-        channelToUpdate.url = stream;
-        WMTWProgramTitle = programTitle;
+  if (channelToUpdate) {
+    const { stream, seconds_until_live, programTitle } = await GetWMTWStreamURL();
+    channelToUpdate.url = stream;
+    WMTWProgramTitle = programTitle;
 
-        if (seconds_until_live === 0) {
-            WMTWStreamType = 'Live';
-        } else {
-            WMTWStreamType = 'Replay';
-        }
-
-        UpdateGlobalESTTime();
-        console.log(`${globalESTTime} | WMTW Data Updated! Stream Type: ${WMTWStreamType}`);
+    if (seconds_until_live === 0) {
+      WMTWStreamType = 'Live';
     } else {
-        console.log(`${globalESTTime} | Channel not found with ID:`, ID);
-
+      WMTWStreamType = 'Replay';
     }
+
+    UpdateGlobalESTTime();
+    console.log(`${globalESTTime} | WMTW Data Updated! Stream Type: ${WMTWStreamType}`);
+  } else {
+    console.log(`${globalESTTime} | Channel not found with ID:`, ID);
+  }
 }
 
 let RADIO_DATA = [
@@ -223,7 +221,8 @@ builder.defineStreamHandler((args) => {
 });
 
 // Function to Update WMTW with a dynamic interval
-const startDynamicInterval = () => {
+const startDynamicInterval = async () => {
+    await UpdateWMTWStreamUrl();
     const dynamicLoop = async () => {
         const getTimestamp = () => {
             const currentDate = new Date();
