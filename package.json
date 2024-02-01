@@ -20,7 +20,6 @@
   "license": "MIT",
   "homepage": "",
   "dependencies": {
-    "node-fetch": "^3.3.2",
     "stremio-addon-sdk": "^1.6.10"
   }
 }

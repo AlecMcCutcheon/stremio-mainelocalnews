@@ -1,5 +1,4 @@
 const { addonBuilder } = require("stremio-addon-sdk");
-const fetch = import("node-fetch");
 
 let WMTWStreamType = ''; // Declare the global variable
 let WMTWProgramTitle = ''; // Declare the global variable
@@ -13,11 +12,37 @@ function UpdateGlobalESTTime() {
   globalESTTime = currentDate.toLocaleString('en-US', estOptions);
 }
 
+const https = require('https');
+
 async function GetWMTWStreamURL() {
   try {
     const apiUrl = "https://cors-anywhere-proxy-streamio.mccutcheon.workers.dev/?https://www.wmtw.com/nowcast/status";
-    const response = await fetch(apiUrl);
-    const jsonData = await response.json();
+
+    const jsonData = await new Promise((resolve, reject) => {
+      const req = https.get(apiUrl, (res) => {
+        let data = '';
+
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        res.on('end', () => {
+          try {
+            const parsedData = JSON.parse(data);
+            resolve(parsedData);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
+
+      req.on('error', (error) => {
+        reject(error);
+      });
+
+      req.end();
+    });
+
     UpdateGlobalESTTime();
     console.log(`${globalESTTime} | WMTW Data:`, jsonData.data);
 
@@ -38,6 +63,7 @@ async function GetWMTWStreamURL() {
     return null;
   }
 }
+
 
 async function UpdateWMTWStreamUrl() {
   const ID = "MaineLocalNews-89960945772534639607784459421582";
