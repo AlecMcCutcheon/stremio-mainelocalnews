@@ -157,7 +157,7 @@ const getGenres = () => {
 
 const manifest = {
     "id": "com.mixtape.stremiomainelocalnews",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Flag_of_the_State_of_Maine.svg/761px-Flag_of_the_State_of_Maine.svg.png",
     "name": "Maine News",
     "description": "Stremio Add-On to Watch Maine Local News Stations",

@@ -1,6 +1,6 @@
 {
   "name": "stremio-mainelocalnews",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Stremio Add-On to Watch Maine Local News Stations",
   "main": "server.js",
   "scripts": {
