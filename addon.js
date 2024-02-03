@@ -76,7 +76,7 @@ async function UpdateWMTWStreamUrl() {
     if (seconds_until_live === 0) {
       WMTWStreamType = 'Live';
     } else {
-      WMTWStreamType = 'Replay';
+      WMTWStreamType = 'Demand';
     }
 
     UpdateGlobalESTTime();
@@ -88,20 +88,28 @@ async function UpdateWMTWStreamUrl() {
 
 let RADIO_DATA = [
     {
-        "genres": ["Maine News", "Weather"],
+        "genres": ["News", "Weather", "Local Events"],
         "id": "MaineLocalNews-89960945772534639607784459421582",
         "name": "WMTW Channel 8",
         "poster": "https://kubrick.htvapps.com/htv-prod-media.s3.amazonaws.com/htv_default_image/wmtw/top_image.png?resize=1200:*",
         "url": 'https://example.com/',
-        "description": "Maine's Total [Weather|News|Coverage] is Live on: Weekdays at (4:30 AM, 5 AM, 6 AM, 12 PM, 4 PM, 5 PM, 6 PM, 10 PM, and 11 PM) | Weekends at (5 AM, 6 AM, 7 AM, 6 PM, 10 PM, and 11 PM) with replays of the latest newscasts available 24/7."
+        "description": "Maine's Total [Weather/News/Coverage] goes live on weekdays at 4:30 AM, 5 AM, 6 AM, 12 PM, 4 PM, 5 PM, 6 PM, 10 PM, and 11 PM, as well as on weekends at 5 AM, 6 AM, 7 AM, 6 PM, 10 PM, and 11 PM. In addition to the live broadcasts, there are replays of the previous newscasts available 24/7, ensuring that viewers can catch up on the latest coverage outside of the scheduled live broadcasting times."
     },
     {
-        "genres": ["Maine News", "Weather", "Traffic", "Sports", "Other Topics"],
+        "genres": ["News", "Weather", "Sports", "Local Events"],
+        "id": "MaineLocalNews-79753841561804236567228490214450",
+        "name": "WGME Channel 13",
+        "poster": "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fis4-ssl.mzstatic.com%2Fimage%2Fthumb%2FPurple113%2Fv4%2Fa6%2Fba%2F72%2Fa6ba7200-ffad-1087-d10f-4457e9b4f828%2Fsource%2F512x512bb.jpg&f=1&nofb=1&ipt=dc1b762e253ede84b2cf8e0d93016d95965124bf44dc7ea4072e9ae33ad1dff8&ipo=images",
+        "url": "https://content.uplynk.com/channel/26e532a9a241468794d8655f0cf4ad79.m3u8",
+        "description": "WGME Channel 13 provides live broadcasts throughout the week, airing on weekdays during various time slots: 2:12 AM - 4:00 AM, 4:00 AM - 4:30 AM, 4:30 AM - 7 AM, 12 PM - 12:30 PM, 5 PM - 5:30 PM, 5:30 PM - 6 PM, 6 PM - 6:30 PM, 7 PM - 7:30 PM, and 11 PM - 11:35 PM. On Saturdays, live programming is available from 8:00 AM - 10:00 AM, 6:00 PM - 6:30 PM, 6:30 PM - 7:00 PM, and 11:00 PM - 11:30 PM. Sundays feature live broadcasts at 9:00 AM - 10:30 AM and 11:00 PM - 11:30 PM. Replays of content are scheduled from Tuesday to Saturday, running from 1:37 AM to 2:12 AM. It's noteworthy that outside of these designated times and during commercial breaks, viewers will more than likely experience dead air; however, in the intervals between live broadcasts, the channel may occasionally choose to play a replay of a newscast."
+    },
+    {
+        "genres": ["News", "Weather", "Traffic", "Sports", "Local Events", "Entertainment"],
         "id": "MaineLocalNews-75582199619481153474745930391197",
         "name": "News Center Maine",
         "poster": "https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fcontent.wcsh6.com%2Fphoto%2F2018%2F01%2F04%2FYouTube_2560x1440_NCM_1515107231609_12174744_ver1.0.png&f=1&nofb=1&ipt=2474af7277f4158556a534d6e0c11de458e590cd9b5434d104da48e760935028&ipo=images",
         "url": "https://video.tegnaone.com/ncm/live/v1/manifest/f9c1bf9ffd6ac86b6173a7c169ff6e3f4efbd693/NCM-Production/4817cbdc-f8bd-4584-a7e1-746cc3cc26f7/0.m3u8",
-        "description": "News Center Maine is Live: 24/7."
+        "description": "News Center Maine airs live on weekdays during multiple time slots: 4:30 AM - 5:00 AM, 5:00 AM - 7:00 AM, 12:00 PM - 12:30 PM, 4:00 PM - 5:00 PM, 5:00 PM - 5:30 PM, 5:30 PM - 6:00 PM, 6:00 PM - 6:30 PM, and 11:00 PM - 11:35 PM. On Saturdays, the live broadcasts occur at 5:00 AM - 7:00 AM, 6:00 PM - 6:30 PM, and 11:00 PM - 11:30 PM, while on Sundays, viewers can tune in at 6:00 AM - 8:00 AM, 6:00 PM - 6:30 PM, and 11:00 PM - 11:30 PM. Replays of the content are available every day from 1:36 AM to 2:11 AM. The remaining time slots feature a blend of news and entertainment programming."
     }
 ];
 
@@ -113,14 +121,13 @@ const getStreams = () => {
         const type = entry["ytId"] ? 'ytId' : 'url';
         if (entry["id"] === wmtwId) {
             title = WMTWProgramTitle;
-            if (WMTWStreamType === 'Replay') {
-                title += ' - Replay';
+            if (WMTWStreamType === 'Demand') {
+                title += ' - Demand';
             } else {
                 title += ' - Live';
             }
-        }else {
-            title += ' - Live';
         }
+
         streams[entry["id"]] = {
             'title': title,
             [type]: entry[type] || entry["url"],
@@ -152,15 +159,19 @@ const manifest = {
     "id": "com.mixtape.stremiomainelocalnews",
     "version": "1.0.0",
     "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Flag_of_the_State_of_Maine.svg/761px-Flag_of_the_State_of_Maine.svg.png",
-    "name": "Maine Local News",
+    "name": "Maine News",
     "description": "Stremio Add-On to Watch Maine Local News Stations",
     "types": ["Local News"],
     "catalogs": [
         {
             "type": "Local News",
-            "id": "MaineLocalNews",
-            "name": "Maine Local News",
-            "extra": [{ "genres": getGenres() }]
+            "id": "LocalNews",
+            "name": "Channels",
+            "extra": [
+                { "name": "search", "isRequired": false }, 
+                { "name": "genre", "isRequired": false}
+            ],
+            "genres": getGenres()
         }
     ],
     "resources": [
@@ -178,16 +189,22 @@ builder.defineCatalogHandler((args) => {
     return new Promise((resolve, reject) => {
         try {
             const searchQuery = args.extra && args.extra.search ? args.extra.search.toLowerCase() : '';
-            const catalog = getCatalog().filter(item => item.name.toLowerCase().includes(searchQuery));
+            const genreFilter = args.extra && args.extra.genre ? args.extra.genre.toLowerCase() : '';
+            
+            const catalog = getCatalog().filter(item => {
+                const nameMatches = item.name.toLowerCase().includes(searchQuery);
+                const genreMatches = item.genres && item.genres.some(genre => genre.toLowerCase().includes(genreFilter));
+                return nameMatches && (genreFilter === '' || genreMatches);
+            });
 
             const metaPreviews = {
                 'metas': catalog.map(item => ({
                     'id': item['id'],
                     'type': "Local News",
                     'name': item['name'],
-                    'genres': item["genres"],
-                    'poster': item["poster"],
-                    'description': item["description"],
+                    'genres': item['genres'],
+                    'poster': item['poster'],
+                    'description': item['description'],
                 }))
             };
             resolve(metaPreviews);
@@ -198,6 +215,7 @@ builder.defineCatalogHandler((args) => {
         }
     });
 });
+
 
 builder.defineMetaHandler((args) => {
     return new Promise((resolve, reject) => {
